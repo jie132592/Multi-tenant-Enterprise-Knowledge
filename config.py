@@ -22,17 +22,25 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "mini_kb_embeddings"
+    QDRANT_TIMEOUT: int = 10
 
     # JWT配置
     SECRET_KEY: str = "40f2101c5b5a5d1b170daacfe1906d9d81657e326579ed15b1d350375182cbda"
     ALGORITHM: str = "HS256" # 加密算法 HS265(哈希算法)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7天
 
-    # LLM配置
+    # LLM 配置（支持 OpenAI / 智谱）
     OPENAI_API_KEY: str = ""
-    OPENAI_BASE_URL: str = ""
-    LLM_MODEL: str = ""
-    EMBEDDING_MODEL: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    LLM_MODEL: str = "gpt-4o-mini"
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+
+    # 智谱配置
+    ZHIPU_API_KEY: str = ""
+    ZHIPU_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4/"
+    ZHIPU_CHAT_MODEL: str = "ZHIPU/GLM-5.2"
+    ZHIPU_EMBEDDING_MODEL: str = "embedding-2"
+    ZHIPU_EMBEDDING_DIM: int = 1024  # embedding-2 向量维度
 
     # 文档处理
     CHUNK_SIZE: int = 500

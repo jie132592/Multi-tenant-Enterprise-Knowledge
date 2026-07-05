@@ -11,7 +11,6 @@ class RegisterRequest(BaseModel):
     tenant_name: str = Field(..., min_length=2, max_length=128, description="租户名称")
     tenant_code: str = Field(..., min_length=2, max_length=64, description="租户编码")
     username: str = Field(..., min_length=3, max_length=64, description="用户名")
-    # EmailStr 是 pydantic 提供的邮箱专用校验类型
     email: EmailStr = Field(..., description="邮箱")
     password: str = Field(..., min_length=6, max_length=64, description="密码")
 
@@ -36,8 +35,11 @@ class UserResponse(BaseModel):
     tenant_id: int
     username: str
     email: str
+    role: str = "member"
     is_active: int
     is_super_admin: int
+    is_tenant_admin: int
+    department_id: Optional[int] = None
     last_login_at: Optional[str] = ""
     created_at: datetime
 
@@ -49,3 +51,10 @@ class ChangePasswordRequest(BaseModel):
     """修改密码请求"""
     old_password: str = Field(..., description="旧密码")
     new_password: str = Field(..., min_length=6, max_length=64, description="新密码")
+
+
+class UserUpdateRequest(BaseModel):
+    """更新用户请求"""
+    role: Optional[str] = Field(None, description="角色: super_admin/tenant_admin/member")
+    department_id: Optional[int] = Field(None, description="部门ID")
+    is_active: Optional[int] = Field(None, description="是否激活: 1=是 0=否")

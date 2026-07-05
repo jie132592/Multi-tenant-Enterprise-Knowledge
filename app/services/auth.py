@@ -6,7 +6,7 @@ from typing import Tuple, Optional
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password, create_token_for_user
-from app.models import User, Tenant
+from app.models import User, Tenant, UserRole
 
 
 class AuthService:
@@ -60,14 +60,15 @@ class AuthService:
         self.db.flush()
         # 此时：tenant.id 有值了，但是租户数据还没正式入库
 
-        # 创建用户
+        # 创建用户（第一个用户设为租户管理员）
         user = User(
             tenant_id=tenant.id,
             username=username,
             email=email,
             password=get_password_hash(password),
+            role=UserRole.TENANT_ADMIN,
             is_active=1,
-            is_super_admin=1 # 第一个设置为超级管理员
+            is_tenant_admin=1
         )
         self.db.add(user)
         # 提交事务，租户+用户同时入库

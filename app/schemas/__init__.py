@@ -8,6 +8,7 @@ from app.schemas.auth import (
     ChangePasswordRequest,
     TokenResponse,
     UserResponse,
+    UserUpdateRequest,
 )
 from app.schemas.tenant import (
     TenantCreate,
@@ -15,17 +16,29 @@ from app.schemas.tenant import (
     TenantResponse,
     TenantListResponse,
 )
+from app.schemas.department import (
+    DepartmentCreate,
+    DepartmentUpdate,
+    DepartmentResponse,
+    DepartmentSimpleResponse,
+)
 from app.schemas.knowledge import (
     KnowledgeBaseCreate,
     KnowledgeBaseUpdate,
     KnowledgeBaseResponse,
+    KnowledgeBaseListResponse,
     DocumentResponse,
+    DocumentListResponse,
+    DocumentUploadResponse,
 )
 from app.schemas.chat import (
     ChatSessionCreate,
     ChatSessionResponse,
     ChatMessageCreate,
     ChatMessageResponse,
+)
+from app.schemas.user import (
+    UserListResponse,
 )
 
 __all__ = [
@@ -41,12 +54,21 @@ __all__ = [
     "TenantUpdate",
     "TenantResponse",
     "TenantListResponse",
+    "DepartmentCreate",
+    "DepartmentUpdate",
+    "DepartmentResponse",
+    "DepartmentSimpleResponse",
     "KnowledgeBaseCreate",
     "KnowledgeBaseUpdate",
     "KnowledgeBaseResponse",
+    "KnowledgeBaseListResponse",
     "DocumentResponse",
+    "DocumentListResponse",
+    "DocumentUploadResponse",
     "ChatSessionCreate",
     "ChatSessionResponse",
     "ChatMessageCreate",
     "ChatMessageResponse",
+    "UserListResponse",
+    "UserUpdateRequest",
 ]

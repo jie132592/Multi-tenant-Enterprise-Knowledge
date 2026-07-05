@@ -27,7 +27,7 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(
     data: Dict[str, Any],
-        expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None
 ) -> str:
     """
     创建JWT Token

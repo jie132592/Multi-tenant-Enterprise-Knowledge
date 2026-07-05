@@ -114,7 +114,7 @@ def get_current_user_optional(
     try:
         # 有token就走完整登录校验逻辑
         return get_current_user(credentials=credentials, db=db)
-    except Exception:
+    except HTTPException:
         # token错误、过期、用户禁用等校验失败、返回空、不拦截接口
         return None
 

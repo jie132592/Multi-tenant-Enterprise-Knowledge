@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app import get_db
 from app.api.deps import get_current_user, CurrentUser
-from app.schemas import RegisterRequest, UserResponse, BaseResponse, TokenResponse, LoginRequest, ChangePasswordRequest
+from app.schemas import RegisterRequest, UserResponse, BaseResponse, TokenResponse, LoginRequest, ChangePasswordRequest, UserListResponse, UserUpdateRequest
 from app.services.auth import AuthService
+from app.models import User, Department
 
 router = APIRouter()
 
@@ -92,4 +93,159 @@ def change_password(
     return {
         "code": 200,
         "messages": "密码修改成功"
+    }
+
+
+@router.get("/users", response_model=BaseResponse)
+def list_users(
+    keyword: str = None,
+    page: int = 1,
+    page_size: int = 20,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取用户列表
+
+    - 超级管理员：可查看所有用户
+    - 普通用户：仅可查看同租户用户
+    """
+    query = db.query(User)
+
+    # 非超级管理员只能查看同租户用户
+    if not current_user.user.is_super_admin:
+        query = query.filter(User.tenant_id == current_user.tenant_id)
+
+    # 关键词搜索
+    if keyword:
+        query = query.filter(
+            (User.username.like(f"%{keyword}%")) |
+            (User.email.like(f"%{keyword}%"))
+        )
+
+    # 获取总数
+    total = query.count()
+
+    # 分页
+    offset = (page - 1) * page_size
+    users = query.order_by(User.created_at.desc()).offset(offset).limit(page_size).all()
+
+    # 构建返回数据
+    result = []
+    for user in users:
+        # 获取部门名称
+        department_name = None
+        if user.department_id:
+            dept = db.query(Department).filter(Department.id == user.department_id).first()
+            if dept:
+                department_name = dept.name
+
+        result.append(UserListResponse(
+            id=user.id,
+            tenant_id=user.tenant_id,
+            username=user.username,
+            email=user.email,
+            role=user.role or "member",
+            is_active=user.is_active,
+            is_super_admin=user.is_super_admin,
+            is_tenant_admin=user.is_tenant_admin,
+            department_id=user.department_id,
+            department_name=department_name,
+            last_login_at=user.last_login_at or "",
+            created_at=user.created_at
+        ))
+
+    return {
+        "code": 200,
+        "message": "success",
+        "data": {
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "list": result
+        }
+    }
+
+
+@router.put("/users/{user_id}", response_model=BaseResponse)
+def update_user(
+    user_id: int,
+    request: UserUpdateRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    更新用户信息（仅管理员）
+
+    - 可以更新用户的部门、角色、状态等
+    """
+    from app.core.permissions import Permission, has_permission
+
+    # 检查是否有用户管理权限
+    if not has_permission(current_user.user.role, Permission.USER_MANAGE):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足，需要用户管理权限"
+        )
+
+    # 获取目标用户
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.tenant_id == current_user.tenant_id
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+
+    # 更新字段
+    if request.role is not None:
+        # 验证角色值
+        valid_roles = ["super_admin", "tenant_admin", "member"]
+        if request.role not in valid_roles:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"无效的角色，可选值: {valid_roles}")
+
+        # 普通管理员不能设置 super_admin
+        if request.role == "super_admin" and not current_user.user.is_super_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有超级管理员可以设置超级管理员角色")
+
+        user.role = request.role
+        # 同步更新 is_tenant_admin 标志
+        user.is_tenant_admin = 1 if request.role == "tenant_admin" else 0
+
+    if request.department_id is not None:
+        # 验证部门存在
+        if request.department_id > 0:
+            dept = db.query(Department).filter(
+                Department.id == request.department_id,
+                Department.tenant_id == current_user.tenant_id
+            ).first()
+            if not dept:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="部门不存在")
+        user.department_id = request.department_id if request.department_id > 0 else None
+
+    if request.is_active is not None:
+        user.is_active = request.is_active
+
+    db.commit()
+    db.refresh(user)
+
+    # 获取部门名称
+    department_name = None
+    if user.department_id:
+        dept = db.query(Department).filter(Department.id == user.department_id).first()
+        if dept:
+            department_name = dept.name
+
+    return {
+        "code": 200,
+        "message": "更新成功",
+        "data": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "department_id": user.department_id,
+            "department_name": department_name,
+            "is_active": user.is_active
+        }
     }

@@ -10,6 +10,8 @@ class KnowledgeBaseCreate(BaseModel):
     """创建知识库请求"""
     name: str = Field(..., min_length=1, max_length=256, description="知识库名称")
     description: Optional[str] = Field(default="", max_length=2000, description="描述")
+    visibility: str = Field(default="private", description="可见性: public/department/private")
+    department_id: Optional[int] = Field(None, description="部门ID（部门可见时使用）")
 
 
 class KnowledgeBaseUpdate(BaseModel):
@@ -17,6 +19,8 @@ class KnowledgeBaseUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=256, description="知识库名称")
     description: Optional[str] = Field(None, max_length=2000, description="描述")
     status: Optional[int] = Field(None, description="状态")
+    visibility: Optional[str] = Field(None, description="可见性: public/department/private")
+    department_id: Optional[int] = Field(None, description="部门ID")
 
 
 class KnowledgeBaseResponse(BaseModel):
@@ -24,9 +28,11 @@ class KnowledgeBaseResponse(BaseModel):
     id: int
     tenant_id: int
     user_id: Optional[int] = None
+    department_id: Optional[int] = None
     name: str
     description: str
     status: int
+    visibility: str = "private"
     document_count: int = Field(default=0, description="文档数量")
     paragraph_count: int = Field(default=0, description="段落数量")
     created_at: datetime
@@ -42,9 +48,11 @@ class KnowledgeBaseListResponse(BaseModel):
     name: str
     description: str
     status: int
+    visibility: str = "private"
     document_count: int = Field(default=0)
     paragraph_count: int = Field(default=0)
     user_id: Optional[int] = None
+    department_id: Optional[int] = None
     creator_username: Optional[str] = ""
     created_at: datetime
 

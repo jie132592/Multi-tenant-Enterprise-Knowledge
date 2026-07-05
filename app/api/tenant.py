@@ -15,10 +15,10 @@ router = APIRouter()
 
 @router.get("/", response_model=BaseResponse[List[TenantListResponse]])
 def list_tenants(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(10, ge=1, description="每页数量"),
-    key_word: str = Query(None, description="关键词"),
-    db: Session = Depends(get_db)
+        page: int = Query(1, ge=1, description="页码"),
+        page_size: int = Query(10, ge=1, description="每页数量"),
+        key_word: str = Query(None, description="关键词"),
+        db: Session = Depends(get_db)
 ):
     """
     获取租户列表（超级管理员专用）
@@ -33,8 +33,8 @@ def list_tenants(
     # 分页
     # order_by: 按...排序
     # 按创建时间倒叙
-    tenants = query.order_by(Tenant.created_at.desc())\
-        .offset((page - 1) * page_size)\
+    tenants = query.order_by(Tenant.created_at.desc()) \
+        .offset((page - 1) * page_size) \
         .limit(page_size).all()
 
     # 补充信息
@@ -59,6 +59,7 @@ def list_tenants(
         "message": "成功",
         "data": result,
     }
+
 
 @router.post("/create-tenant", response_model=BaseResponse[TenantResponse])
 def create_tenant(
@@ -86,6 +87,7 @@ def create_tenant(
         "data": TenantResponse.model_validate(tenant),
     }
 
+
 @router.get("/{tenant_id}", response_model=BaseResponse[TenantResponse])
 def get_tenant(tenant_id: int, db: Session = Depends(get_db)):
     """获取租户详情"""
@@ -99,11 +101,12 @@ def get_tenant(tenant_id: int, db: Session = Depends(get_db)):
         "data": TenantResponse.model_validate(tenant),
     }
 
+
 @router.put("/{tenant_id}", response_model=BaseResponse[TenantResponse])
 def update_tenant(
-    tenant_id: int,
-    request: TenantUpdate,
-    db: Session = Depends(get_db),
+        tenant_id: int,
+        request: TenantUpdate,
+        db: Session = Depends(get_db),
 ):
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
@@ -124,11 +127,18 @@ def update_tenant(
         "data": TenantResponse.model_validate(tenant),
     }
 
-@router.delete("/{tenant_id}", response_model=BaseResponse[TenantResponse])
+
+@router.delete("/{tenant_id}", response_model=BaseResponse)
 def delete_tenant(
         tenant_id: int,
         current: CurrentUser = Depends(require_super_admin),
-        db: Session = Depends(get_db)):
+        db: Session = Depends(get_db)
+):
+    """
+    删除租户（超级管理员专用）
+
+    - 删除租户会级联删除所有关联数据（用户、知识库、文档等）
+    """
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
     if not tenant:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="租户不存在")
